@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 
+# Đặt phiên bản macOS tối thiểu TRƯỚC dòng project() để có hiệu lực đầy đủ.
+# 10.15 (Catalina, phát hành 2019) đảm bảo tương thích với hầu hết máy Mac
+# đang dùng hiện nay, kể cả các máy đời cũ hơn chưa nâng cấp lên phiên bản
+# macOS mới nhất. Build ra bản "universal" chạy được cả trên chip Intel
+# (x86_64) và Apple Silicon (arm64).
+if (APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum macOS version")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures")
+endif()
+
 project(AcousticPianoModel VERSION 1.0.0)
 
 # ---------------------------------------------------------------------------
