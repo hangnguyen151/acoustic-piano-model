@@ -38,22 +38,22 @@ juce_add_plugin(AcousticPianoModel
 juce_generate_juce_header(AcousticPianoModel)
 
 target_sources(AcousticPianoModel PRIVATE
-    Source/PluginProcessor.cpp
-    Source/PluginProcessor.h
-    Source/PluginEditor.cpp
-    Source/PluginEditor.h
-    Source/PianoVoice.cpp
-    Source/PianoVoice.h
-    Source/DSP/StringModel.cpp
-    Source/DSP/StringModel.h
-    Source/DSP/HammerModel.cpp
-    Source/DSP/HammerModel.h
-    Source/DSP/DamperModel.cpp
-    Source/DSP/DamperModel.h
-    Source/DSP/PedalResonanceEngine.cpp
-    Source/DSP/PedalResonanceEngine.h
-    Source/DSP/ConvolutionReverbUnit.cpp
-    Source/DSP/ConvolutionReverbUnit.h)
+    PluginProcessor.cpp
+    PluginProcessor.h
+    PluginEditor.cpp
+    PluginEditor.h
+    PianoVoice.cpp
+    PianoVoice.h
+    StringModel.cpp
+    StringModel.h
+    HammerModel.cpp
+    HammerModel.h
+    DamperModel.cpp
+    DamperModel.h
+    PedalResonanceEngine.cpp
+    PedalResonanceEngine.h
+    ConvolutionReverbUnit.cpp
+    ConvolutionReverbUnit.h)
 
 target_compile_definitions(AcousticPianoModel PRIVATE
     JUCE_WEB_BROWSER=0
