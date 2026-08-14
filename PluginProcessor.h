@@ -2,8 +2,8 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "PianoVoice.h"
-#include "DSP/PedalResonanceEngine.h"
-#include "DSP/ConvolutionReverbUnit.h"
+#include "PedalResonanceEngine.h"
+#include "ConvolutionReverbUnit.h"
 
 /**
     AcousticPianoModelProcessor
