@@ -90,6 +90,10 @@ private:
     struct AllpassStage { float a = 0.0f; float x1 = 0.0f, y1 = 0.0f; };
     std::array<AllpassStage, numDispersionStages> dispersionChain;
 
+    // --- Warmth filter (giảm sắc cạnh số hóa, tăng cảm giác ấm) ---
+    float warmthFilterState = 0.0f;
+    float warmthCoeff = 0.6f;
+
     // --- Termination reflection coefficients ---
     float bridgeReflection = -0.996f; // ngựa đàn gần như cứng nhưng có rò rỉ năng lượng ra soundboard
     float nutReflection    = -0.999f; // đầu agraffe gần như phản xạ hoàn toàn
