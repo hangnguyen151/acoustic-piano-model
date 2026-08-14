@@ -1,9 +1,9 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "DSP/StringModel.h"
-#include "DSP/HammerModel.h"
-#include "DSP/DamperModel.h"
-#include "DSP/PedalResonanceEngine.h"
+#include "StringModel.h"
+#include "HammerModel.h"
+#include "DamperModel.h"
+#include "PedalResonanceEngine.h"
 #include <array>
 
 /**
