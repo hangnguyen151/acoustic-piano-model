@@ -43,7 +43,11 @@ juce_add_plugin(AcousticPianoModel
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
-    COPY_PLUGIN_AFTER_BUILD TRUE)
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    # macOS yêu cầu khai báo lý do xin quyền truy cập Bluetooth (dùng để dò
+    # tìm bàn phím MIDI không dây) và Microphone; thiếu dòng này app sẽ bị
+    # hệ điều hành tự đóng ngay khi khởi động (TCC crash).
+    PLIST_TO_MERGE "<key>NSBluetoothAlwaysUsageDescription</key><string>Ứng dụng dùng Bluetooth để dò tìm bàn phím MIDI không dây (nếu có).</string><key>NSBluetoothPeripheralUsageDescription</key><string>Ứng dụng dùng Bluetooth để dò tìm bàn phím MIDI không dây (nếu có).</string><key>NSMicrophoneUsageDescription</key><string>Ứng dụng có thể xử lý tín hiệu audio đầu vào nếu người dùng bật.</string>")
 
 juce_generate_juce_header(AcousticPianoModel)
 
