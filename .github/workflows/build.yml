@@ -1,0 +1,44 @@
+name: Build Acoustic Piano Model
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout project (mã nguồn plugin)
+        uses: actions/checkout@v4
+        with:
+          path: AcousticPianoModel
+
+      - name: Checkout JUCE framework
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: master
+          path: JUCE
+
+      - name: Configure (CMake)
+        working-directory: AcousticPianoModel
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Release)
+        working-directory: AcousticPianoModel
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Upload build result
+        uses: actions/upload-artifact@v4
+        with:
+          name: AcousticPianoModel-${{ matrix.os }}
+          path: |
+            AcousticPianoModel/build/AcousticPianoModel_artefacts/Release/**
+          if-no-files-found: warn
