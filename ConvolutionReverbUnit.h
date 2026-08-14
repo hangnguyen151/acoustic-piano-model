@@ -18,17 +18,21 @@
 
     Người dùng có thể thay bằng loadImpulseResponseFromFile() để nạp IR
     thật (ví dụ đo từ phòng hòa nhạc) nếu có sẵn.
+
+    Ngoài reverb, lớp này còn có một bộ "Piano Tone Shaper" - 3 bộ lọc EQ
+    (low-shelf ấm + peak trong trẻo + high-shelf giảm chói) đặt trên toàn
+    bộ master bus (cả tín hiệu khô lẫn đuôi vang), mô phỏng màu âm mà bàn
+    cộng hưởng (soundboard) và microphone thu âm piano thật tạo ra. Đây là
+    yếu tố quan trọng giúp âm nghe "ấm, tròn" thay vì tiếng dây trần trụi
+    kiểu synth/waveguide thô.
 */
 class ConvolutionReverbUnit
 {
 public:
     void prepare (const juce::dsp::ProcessSpec& spec);
 
-    /** Sinh và nạp một IR giả lập phòng hòa nhạc; sizeSeconds ~1.5-4.5s,
-        damping 0..1 điều khiển tốc độ hấp thụ tần cao theo thời gian. */
     void generateAlgorithmicIR (float sizeSeconds, float damping, double sampleRate);
 
-    /** Nạp IR từ file .wav thật (tùy chọn), nếu người dùng có sẵn thư viện IR. */
     void loadImpulseResponseFromFile (const juce::File& wavFile);
 
     void setMix (float wetAmount01) { mix = juce::jlimit (0.0f, 1.0f, wetAmount01); }
@@ -39,11 +43,17 @@ public:
     void reset() { convolution.reset(); }
 
 private:
+    void updateToneShaperCoefficients (double sampleRate);
+    void processToneShaper (juce::dsp::AudioBlock<float>& block) noexcept;
+
     juce::dsp::Convolution convolution;
     juce::dsp::ProcessSpec currentSpec {};
     float mix = 0.28f;
 
-    // Buffer khô để trộn dry/wet thủ công (Convolution engine của JUCE xử lý
-    // in-place theo block, nên ta giữ bản sao dry trước khi convolve).
     juce::AudioBuffer<float> dryBuffer;
+
+    static constexpr int maxToneChannels = 2;
+    static constexpr int numToneBands = 3;
+    std::array<std::array<juce::dsp::IIR::Filter<float>, numToneBands>, maxToneChannels> toneFilters;
+    juce::dsp::IIR::Coefficients<float>::Ptr lowShelfCoeffs, presencePeakCoeffs, highShelfCoeffs;
 };
