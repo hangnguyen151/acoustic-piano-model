@@ -134,7 +134,7 @@ void AcousticPianoModelProcessor::processBlock (juce::AudioBuffer<float>& buffer
     float reqSize = reverbSizeParam->load();
     if (std::abs (reqSize - lastReverbSize) > 0.05f)
     {
-        reverb.setSizeAndDamping (reqSize, 0.45f, currentSampleRate);
+        reverb.setSizeAndDamping (reqSize, 0.6f, currentSampleRate);
         lastReverbSize = reqSize;
     }
     reverb.setMix (reverbMixParam->load());
