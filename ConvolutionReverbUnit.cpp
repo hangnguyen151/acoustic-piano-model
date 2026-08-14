@@ -5,7 +5,50 @@ void ConvolutionReverbUnit::prepare (const juce::dsp::ProcessSpec& spec)
     currentSpec = spec;
     convolution.prepare (spec);
     dryBuffer.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
-    generateAlgorithmicIR (2.6f, 0.45f, spec.sampleRate);
+
+    generateAlgorithmicIR (2.6f, 0.6f, spec.sampleRate);
+
+    updateToneShaperCoefficients (spec.sampleRate);
+    for (auto& channelBands : toneFilters)
+        for (auto& f : channelBands)
+            f.reset();
+}
+
+void ConvolutionReverbUnit::updateToneShaperCoefficients (double sampleRate)
+{
+    lowShelfCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf (
+        sampleRate, 180.0f, 0.7f, juce::Decibels::decibelsToGain (3.0f));
+
+    presencePeakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter (
+        sampleRate, 2200.0f, 0.9f, juce::Decibels::decibelsToGain (2.0f));
+
+    highShelfCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+        sampleRate, 6500.0f, 0.7f, juce::Decibels::decibelsToGain (-3.5f));
+
+    for (auto& channelBands : toneFilters)
+    {
+        channelBands[0].coefficients = lowShelfCoeffs;
+        channelBands[1].coefficients = presencePeakCoeffs;
+        channelBands[2].coefficients = highShelfCoeffs;
+    }
+}
+
+void ConvolutionReverbUnit::processToneShaper (juce::dsp::AudioBlock<float>& block) noexcept
+{
+    const int numCh = juce::jmin ((int) block.getNumChannels(), maxToneChannels);
+    const int numSamples = (int) block.getNumSamples();
+
+    for (int ch = 0; ch < numCh; ++ch)
+    {
+        auto* data = block.getChannelPointer ((size_t) ch);
+        for (int n = 0; n < numSamples; ++n)
+        {
+            float s = data[n];
+            for (auto& f : toneFilters[(size_t) ch])
+                s = f.processSample (s);
+            data[n] = s;
+        }
+    }
 }
 
 void ConvolutionReverbUnit::generateAlgorithmicIR (float sizeSeconds, float damping, double sampleRate)
@@ -23,8 +66,6 @@ void ConvolutionReverbUnit::generateAlgorithmicIR (float sizeSeconds, float damp
     {
         auto* data = ir.getWritePointer (ch);
 
-        // --- 1) Early reflections: cụm xung rời rạc trong ~80ms đầu, biên độ
-        //         giảm dần, vị trí lệch nhẹ giữa 2 kênh để tạo độ rộng stereo. ---
         int numEarlyTaps = 22;
         for (int t = 0; t < numEarlyTaps; ++t)
         {
@@ -38,18 +79,13 @@ void ConvolutionReverbUnit::generateAlgorithmicIR (float sizeSeconds, float damp
             }
         }
 
-        // --- 2) Late diffuse tail: nhiễu trắng nhân bao hình suy giảm mũ,
-        //         lọc thông thấp một cực mà hệ số cắt giảm dần theo thời gian
-        //         (mô phỏng hấp thụ âm học: tần cao tắt nhanh hơn tần thấp). ---
         float lpState = 0.0f;
-        float t60 = sizeSeconds; // thời gian để suy giảm ~60dB (xấp xỉ)
+        float t60 = sizeSeconds;
         for (int n = 0; n < numSamples; ++n)
         {
             float timeSec = (float) n / (float) sampleRate;
-            float envelope = std::exp (-6.907755f * timeSec / juce::jmax (0.05f, t60)); // -60dB tại t60
+            float envelope = std::exp (-6.907755f * timeSec / juce::jmax (0.05f, t60));
 
-            // Hệ số lọc thông thấp giảm dần theo thời gian -> đuôi vang càng
-            // về sau càng "tối" (ít treble), giống hấp thụ vật liệu phòng thật.
             float lpCoeff = juce::jmap (envelope, 0.0f, 1.0f,
                                          0.05f + 0.15f * (1.0f - damping),
                                          0.85f);
@@ -75,7 +111,7 @@ void ConvolutionReverbUnit::loadImpulseResponseFromFile (const juce::File& wavFi
     convolution.loadImpulseResponse (wavFile,
                                       juce::dsp::Convolution::Stereo::yes,
                                       juce::dsp::Convolution::Trim::yes,
-                                      0 /* no length limit */,
+                                      0,
                                       juce::dsp::Convolution::Normalise::yes);
 }
 
@@ -89,7 +125,6 @@ void ConvolutionReverbUnit::process (juce::dsp::AudioBlock<float>& block)
     const int numCh = (int) block.getNumChannels();
     const int numSamples = (int) block.getNumSamples();
 
-    // Lưu bản sao khô (dry) để trộn thủ công sau khi convolve (ướt/wet).
     for (int ch = 0; ch < numCh; ++ch)
         dryBuffer.copyFrom (ch, 0, block.getChannelPointer ((size_t) ch), numSamples);
 
@@ -102,4 +137,6 @@ void ConvolutionReverbUnit::process (juce::dsp::AudioBlock<float>& block)
         for (int n = 0; n < numSamples; ++n)
             wet[n] = dry[n] * (1.0f - mix) + wet[n] * mix;
     }
+
+    processToneShaper (block);
 }
